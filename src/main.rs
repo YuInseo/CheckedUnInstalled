@@ -3,6 +3,7 @@ mod structs;
 use std::fs::{File, read_to_string};
 use std::io::Write;
 use std::path::Path;
+use std::process::Command;
 use tracing_subscriber::FmtSubscriber;
 
 use clap::{Parser, Subcommand};
@@ -52,12 +53,9 @@ async fn main() {
                             .collect();
 
                         differences.iter().for_each(|different|{
-                            let mut install_command: String = String::new();
-
-                            install_command += &*(String::from("npm i ") + different);
-
-                            info!("test {:?}", install_command);
-
+                            let test = Command::new("npm.cmd").args(["i", different])
+                                .status();
+                            info!("test : {:?}",test)
                         });
                     } else{
 
