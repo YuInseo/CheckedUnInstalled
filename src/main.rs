@@ -1,4 +1,5 @@
 mod structs;
+mod utils;
 
 use std::fs::{File, read_to_string};
 use std::io::Write;
@@ -17,9 +18,9 @@ use dialoguer::theme::ColorfulTheme;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tracing::info;
-use CheckUninstalled::{get_map_from_json, get_origin_map, showing_as_table};
+use utils::{add_exceptions, get_map_from_json, get_other_package_map, showing_as_table};
 use crate::structs::commands::{Cli, Commands};
-use crate::structs::option::PackageOption;
+use crate::structs::import_option::ImportOption;
 use crate::structs::package::Packages;
 
 #[tokio::main]
@@ -39,7 +40,7 @@ async fn main() {
 
                 } else{
                     let mut file = File::create("checker.json").ok();
-                    let package_option = PackageOption::new();
+                    let package_option = ImportOption::new();
 
                     let test = json!(package_option);
                     let test = serde_json::to_string_pretty(&test).unwrap();
@@ -60,7 +61,7 @@ async fn main() {
 
                     let target_map = get_map_from_json(package_json_path).ok().unwrap();
                     let current_map = get_map_from_json("package.json").ok().unwrap();
-                    // showing_as_table(target_map.clone(),current_map.clone());
+
                     let all_keys: Vec<_> = target_map.keys().chain(current_map.keys()).collect();
 
                     let differences: Vec<_> = all_keys.into_iter()
@@ -69,35 +70,41 @@ async fn main() {
                         .collect();
 
                     differences.iter().for_each(|different|{
-                        let test = Command::new("npm.cmd").args(["i", different])
-                            .status();
-                        info!("test : {:?}",test)
+                        Command::new("npm.cmd").args(["i", different]);
                     });
                 } else{
                     info!("test");
                 }
             }
 
-            Commands::Add => {
-                let mut selections:Vec<String> = Vec::new();
+            Commands::Except => {
+                let mut original:Vec<String> = Vec::new();
 
-                let test = get_origin_map();
+                let other_package = get_other_package_map();
 
-                test.iter().for_each(|(name, version)|{
-                    selections.push(name.to_owned());
-                });
+                if other_package.is_ok(){
+                    other_package.ok().unwrap().iter().for_each(|(name, version)|{
+                        original.push(name.to_owned());
+                    });
+                } else{
+                    println!("npm package-importer init")
+                }
 
                 let current_map = get_map_from_json("package.json").ok().unwrap();
-
                 let selections = MultiSelect::with_theme(&ColorfulTheme::default())
-                    .with_prompt("Space to select excepted package")
-                    .items(&selections)
-                    .max_length(8)
-                    .interact()
-                    .unwrap();
+                                                                .with_prompt("Space to select excepted package")
+                if selections.is_ok(){
+                    let selections = selections.ok().unwrap();
+                    if !selections.is_empty(){
 
-
-                println!("Enjoy your {:?}!", selections);
+                        selections.iter().for_each(|index|{
+                            let name =  original.get(index.to_owned()).unwrap();
+                            add_exceptions(name.clone());
+                        });
+                    } else{
+                        println!("Quit select package page")
+                    }
+                }
             }
         }
     }
