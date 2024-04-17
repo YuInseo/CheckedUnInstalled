@@ -11,10 +11,13 @@ use clap_serde_derive::{
     clap::{self},
     serde::Serialize
 };
+use cliclack::input;
+use dialoguer::{Input, MultiSelect, Select};
+use dialoguer::theme::ColorfulTheme;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tracing::info;
-use CheckUninstalled::get_map_from_json;
+use CheckUninstalled::{get_map_from_json, get_origin_map, showing_as_table};
 use crate::structs::commands::{Cli, Commands};
 use crate::structs::option::PackageOption;
 use crate::structs::package::Packages;
@@ -57,6 +60,7 @@ async fn main() {
 
                     let target_map = get_map_from_json(package_json_path).ok().unwrap();
                     let current_map = get_map_from_json("package.json").ok().unwrap();
+                    // showing_as_table(target_map.clone(),current_map.clone());
                     let all_keys: Vec<_> = target_map.keys().chain(current_map.keys()).collect();
 
                     let differences: Vec<_> = all_keys.into_iter()
@@ -70,8 +74,30 @@ async fn main() {
                         info!("test : {:?}",test)
                     });
                 } else{
-
+                    info!("test");
                 }
+            }
+
+            Commands::Add => {
+                let mut selections:Vec<String> = Vec::new();
+
+                let test = get_origin_map();
+
+                test.iter().for_each(|(name, version)|{
+                    selections.push(name.to_owned());
+                });
+
+                let current_map = get_map_from_json("package.json").ok().unwrap();
+
+                let selections = MultiSelect::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Space to select excepted package")
+                    .items(&selections)
+                    .max_length(8)
+                    .interact()
+                    .unwrap();
+
+
+                println!("Enjoy your {:?}!", selections);
             }
         }
     }
