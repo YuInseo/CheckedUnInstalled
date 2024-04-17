@@ -11,7 +11,7 @@ use clap_serde_derive::{
     clap::{self},
     serde::Serialize
 };
-use cliclack::input;
+
 use dialoguer::{Input, MultiSelect, Select};
 use dialoguer::theme::ColorfulTheme;
 use serde::Deserialize;
