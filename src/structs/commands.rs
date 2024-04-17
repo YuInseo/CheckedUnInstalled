@@ -10,5 +10,5 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    Init,Run, Add,
+    Init, Run, Except,
 }
